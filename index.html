@@ -1,48 +1,186 @@
-<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Моя зарплата</title><style>
-:root{font-family:Inter,system-ui,sans-serif;color:#f2f5f4;background:#101615}*{box-sizing:border-box}body{margin:0}main{max-width:480px;margin:auto;padding:24px 18px 100px}h1{font-size:25px;margin:4px 0 24px}.muted{color:#91a39e;font-size:13px}.hero{background:linear-gradient(140deg,#1c3c32,#173027);border:1px solid #315746;padding:25px;border-radius:25px}.hero strong{display:block;font-size:35px;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.tile,.entry{background:#1d2724;border:1px solid #2c3934;border-radius:19px;padding:17px}.tile b{display:block;font-size:20px;margin-top:9px}.entry{margin:9px 0;display:flex;justify-content:space-between;gap:8px}.entry b{font-size:15px}button{border:0;background:#6ce0ad;color:#10251c;border-radius:14px;padding:14px 17px;font-weight:750;cursor:pointer}nav{position:fixed;bottom:0;left:0;right:0;background:#17211e;border-top:1px solid #35413b;display:flex;justify-content:center;gap:12px;padding:12px}nav button{background:#2b3b34;color:white}nav button.active{background:#6ce0ad;color:#10251c}.hide{display:none}input,select{width:100%;padding:14px;background:#24312c;color:white;border:1px solid #3b5146;border-radius:12px;margin:7px 0 17px;font-size:16px}label{font-size:13px;color:#b2c4ba}.actions{display:flex;gap:6px;align-items:center}.smallbtn{padding:9px 11px;font-size:12px;background:#344a40;color:#e8f5ed}.danger{background:#553333;color:#ffd7d7}.entry>div:first-child{min-width:0;overflow-wrap:anywhere}.entry{align-items:center}.entry .right{text-align:right;flex-shrink:0}.entry .right b{display:block;margin-bottom:8px}.note{font-size:12px;color:#91a39e;line-height:1.5}</style>
-<main><header><div class="muted">Личный кабинет · Демо</div><h1>Моя зарплата <span style="color:#6ce0ad">●</span></h1></header>
-<section id="home"><div class="hero"><div class="muted">Заработано за месяц</div><strong id="total">0 ₽</strong><div id="comm" class="muted"></div></div><h3>По категориям</h3><div class="grid" id="tiles"></div><h3>Последние клиенты</h3><div id="recent"></div></section>
-<section id="clients" class="hide"><h2>Клиенты</h2><div id="all"></div></section>
-<section id="add" class="hide"><h2 id="formTitle">Новая комиссия</h2><form id="form"><label>Имя клиента</label><input id="name" required maxlength="100" placeholder="Например, Иван"><label>Категория</label><select id="cat"><option value="entrance">ВХОД</option><option value="consumer">ВХОД с потреба</option><option value="broker">БРОКЕРКА</option><option value="extras">ДОПЫ</option></select><label>Комиссия компании, ₽</label><input id="amount" type="number" min="1" max="1000000000" step="1" required placeholder="150000"><label>Дата</label><input id="date" type="date" required><button id="saveBtn" type="submit" style="width:100%">Сохранить комиссию</button><button id="cancelEdit" type="button" class="hide" style="width:100%;margin-top:9px;background:#344a40;color:white">Отменить изменение</button></form><p class="note">Демо хранит записи только в этом браузере. Для команды потребуется сервер и авторизация Telegram.</p></section></main>
-<nav><button data-page="home" class="active">Главная</button><button data-page="clients">Клиенты</button><button data-page="add">＋ Добавить</button></nav>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101615">
+<title>Моя зарплата</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#101615;color:#f3f7f4;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#101615;min-height:100vh}main{width:min(100%,650px);margin:auto;padding:24px 17px calc(100px + env(safe-area-inset-bottom))}h1{font-size:27px;margin:5px 0 15px;letter-spacing:-.5px}h2{font-size:21px;margin:0 0 16px}h3{font-size:16px;margin:21px 0 12px}p{line-height:1.55}.muted{color:#9bada3;font-size:13px}.tiny{font-size:11px}.appmark{font-size:13px;color:#a6bdb0}.hero{background:linear-gradient(125deg,#1c4536,#173027);border:1px solid #3a6e55;border-radius:23px;padding:24px}.hero strong{font-size:34px;display:block;margin:13px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.tile,.entry,.panel{background:#1d2724;border:1px solid #304139;border-radius:17px;padding:15px}.tile b{font-size:20px;display:block;margin:8px 0}.entry{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:9px 0}.entry b{font-size:15px}.entry .right{flex-shrink:0;text-align:right}.entry .right>b{display:block;margin-bottom:8px}.actions{display:flex;justify-content:flex-end;gap:5px}button{font:inherit;font-weight:700;border:0;border-radius:12px;background:#6cdda7;color:#12281b;padding:12px 15px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.small{padding:8px 11px;font-size:12px;background:#344d41;color:#e1f6e9}.danger{background:#603637;color:#ffe4df}.quiet{background:#2b4035;color:#e6f0e9}.primary{width:100%;margin-top:7px}.hidden{display:none!important}input,select{font:inherit;width:100%;padding:12px;background:#24322c;color:white;border:1px solid #3c5749;border-radius:12px;margin:6px 0 17px;min-height:44px}label{font-size:13px;color:#bbd1c3}.panel{margin:12px 0}.panel h3{margin:0 0 12px}.stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.stack>button{flex:1}.badge{border:1px solid #507762;color:#afedc9;padding:4px 7px;border-radius:7px;font-size:11px;display:inline-block}.error{color:#ffc1c1;background:#55272f;padding:12px;border-radius:12px;margin:12px 0}.notice{color:#cfdecf;background:#2c4032;padding:12px;border-radius:12px;margin:12px 0}.center{text-align:center}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;word-break:break-all}.nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;justify-content:center;padding:10px 9px calc(10px + env(safe-area-inset-bottom));background:#15201b;border-top:1px solid #354a3e;z-index:5}.nav button{font-size:12px;padding:11px 8px;background:#293e32;color:white;flex:1;max-width:140px}.nav button.active{background:#6cdda7;color:#13261b}.row{display:flex;justify-content:space-between;align-items:center;gap:9px}.row>div:first-child{overflow-wrap:anywhere}.spacer{height:12px}.selected{outline:2px solid #6cdda7}.divider{border:0;border-top:1px solid #33483c;margin:15px 0}.empty{color:#9bada3;padding:15px 0}.loading{opacity:.6;pointer-events:none}@media(max-width:390px){.actions{flex-wrap:wrap}.entry{align-items:flex-start}.entry .right{max-width:48%}.hero strong{font-size:30px}}
+</style>
+</head>
+<body>
+<main id="app">
+<header><div id="subtitle" class="appmark">Личный кабинет · Telegram</div><h1>Моя зарплата <span style="color:#6cdda7">●</span></h1></header>
+<div id="message" class="hidden"></div>
+<section id="access"><div class="panel"><h2>Подключение</h2><p id="accessText" class="muted">Проверяем вход через Telegram…</p><div id="identity" class="hidden"><p>Ваш Telegram ID: <b id="telegramId" class="mono"></b></p><p class="muted">Передайте ID руководителю, чтобы он добавил вас в команду, или используйте приглашение.</p><label>Код приглашения</label><input id="inviteCode" placeholder="Вставьте полученный код" autocomplete="off"><button id="redeem" class="primary">Активировать приглашение</button></div><button id="retry" class="quiet hidden" style="width:100%">Повторить вход</button></div></section>
+<div id="workspace" class="hidden">
+<section id="home"><div class="hero"><div id="earnedLabel" class="muted">Начислено за месяц</div><strong id="earned">0 ₽</strong><div id="commissions" class="muted">Комиссии: 0 ₽</div></div><h3>Период и сотрудник</h3><div class="grid"><div><label>Месяц</label><input id="month" type="month"></div><div id="filterWrap" class="hidden"><label>Сотрудник</label><select id="ownerFilter"></select></div></div><h3>По категориям</h3><div id="tiles" class="grid"></div><h3>Последние клиенты</h3><div id="recent"></div></section>
+<section id="clients" class="hidden"><h2>Клиенты</h2><div id="clientsList"></div></section>
+<section id="edit" class="hidden"><h2 id="formTitle">Новая комиссия</h2><form id="clientForm"><label>Имя клиента</label><input id="clientName" maxlength="100" required placeholder="Например, Иван"><label>Категория</label><select id="category"><option value="ВХОД">ВХОД</option><option value="ВХОД С ПОТРЕБА">ВХОД с потреба</option><option value="БРОКЕРКА">БРОКЕРКА</option><option value="ДОПЫ">ДОПЫ</option></select><label>Сумма комиссии компании, ₽</label><input id="commission" type="number" min="0.01" max="1000000000" step="0.01" required placeholder="150000"><label>Дата сделки</label><input id="dealDate" type="date" required><div id="ownerField" class="hidden"><label>Ответственный сотрудник</label><select id="ownerSelect"></select></div><button type="submit" class="primary" id="save">Сохранить</button><button type="button" class="quiet primary hidden" id="cancel">Отменить редактирование</button></form></section>
+<section id="team" class="hidden"><h2>Команда</h2><div id="teamList"></div><div class="panel"><h3>Добавить по Telegram ID</h3><form id="employeeForm"><label>Telegram ID сотрудника</label><input id="newTgId" inputmode="numeric" pattern="[0-9]+" required placeholder="123456789"><label>Имя сотрудника</label><input id="newName" maxlength="100" required placeholder="Имя и фамилия"><button class="primary">Добавить сотрудника</button></form></div><div class="panel"><h3>Приглашение по коду</h3><p class="muted">Создай одноразовый код на 7 дней и отправь сотруднику лично. Он введёт код при первом входе.</p><button id="newInvite" class="primary">Создать приглашение</button><div id="inviteOutput" class="hidden"><p class="muted">Скопируйте и передайте код сотруднику:</p><p id="newCode" class="mono"></p><button id="copyInvite" class="quiet">Скопировать код</button></div></div><div class="panel"><h3>История изменений</h3><button id="loadHistory" class="quiet">Показать последние действия</button><div id="historyList"></div></div></section>
+<nav class="nav" id="nav"><button data-page="home" class="active">Главная</button><button data-page="clients">Клиенты</button><button data-page="edit">＋ Добавить</button><button data-page="team" id="teamNav" class="hidden">Команда</button></nav>
+</div>
+</main>
 <script>
-const fmt=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n)+' ₽';
-const labels={entrance:'ВХОД',consumer:'ВХОД с потреба',broker:'БРОКЕРКА',extras:'ДОПЫ'};
-let entries=JSON.parse(localStorage.getItem('mysalary_demo_v1')||'[]');
-let editingId=null;
-const makeId=()=>('id_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));
-entries=entries.map(e=>({...e,id:e.id||makeId()}));
-function persist(){localStorage.setItem('mysalary_demo_v1',JSON.stringify(entries))}
-persist();
-const month=()=>new Date().toISOString().slice(0,7);
-const rate=(sum,levels)=>levels.reduce((v,[threshold,r])=>sum>=threshold?r:v,levels[0][1]);
-function calculate(items){
-const sums={entrance:0,consumer:0,broker:0,extras:0};
-items.forEach(e=>sums[e.cat]+=e.amount);
-const entranceRate=rate(sums.entrance,[[0,.05],[1501000,.06]]);
-const brokerRate=rate(sums.broker,[[0,.07],[501000,.10],[1301000,.12],[2101000,.14],[3001000,.15]]);
-const bonus=sums.broker>=3001000?30000:sums.broker>=2101000?20000:0;
-const pay={entrance:sums.entrance*entranceRate,consumer:sums.consumer*.1,broker:sums.broker*brokerRate+bonus,extras:sums.extras*.04};
-return {sums,pay,total:Object.values(pay).reduce((a,b)=>a+b,0),comm:Object.values(sums).reduce((a,b)=>a+b,0)};
+'use strict';
+// Впишите ТОЛЬКО публичный адрес функции, никаких токенов и secret/service_role ключей!
+const EDGE_FUNCTION_URL = 'https://vcvqrjekcrucqcioyurt.supabase.co/functions/v1/telegram-auth';
+const $ = id => document.getElementById(id);
+const tgApp = window.Telegram?.WebApp;
+const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n || 0)+' ₽';
+const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => {const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const state={member:null,employees:[],clients:[],editing:null,page:'home'};
+const isManager=()=>state.member?.role==='manager';
+const employeeName=id=>state.employees.find(e=>e.id===id)?.full_name||'Сотрудник';
+const getSelectedOwner=()=>isManager() ? $('ownerFilter').value : state.member.id;
+function message(s,type='notice'){const e=$('message');e.textContent=s;e.className=type;}
+function clearMessage(){const e=$('message');e.textContent='';e.className='hidden';}
+async function api(action, extra={}){
+ if(EDGE_FUNCTION_URL.includes('PASTE-YOUR-PROJECT-REF')) throw Error('Нужно настроить адрес функции Supabase в index.html.');
+ if(!tgApp?.initData) throw Error('Откройте приложение через кнопку в Telegram-боте.');
+ const response=await fetch(EDGE_FUNCTION_URL,{
+   method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+   body:JSON.stringify({action,initData:tgApp.initData,...extra})
+ });
+ let payload;try{payload=await response.json()}catch{throw Error('Сервер вернул неожиданный ответ');}
+ if(!response.ok || !payload.ok) throw Error(payload.error || 'Ошибка запроса');
+ return payload;
+}
+async function login(){
+ $('access').classList.remove('hidden');$('workspace').classList.add('hidden');$('identity').classList.add('hidden');
+ $('accessText').textContent='Проверяем вход через Telegram…';$('retry').classList.add('hidden');clearMessage();
+ try{
+   const r=await api('whoami');
+   if(!r.member){
+     $('accessText').textContent='Аккаунт подтверждён, но пока не добавлен в команду.';
+     $('telegramId').textContent=r.telegram_id;
+     $('identity').classList.remove('hidden');return;
+   }
+   state.member=r.member; await refresh();
+   $('access').classList.add('hidden');$('workspace').classList.remove('hidden');
+   $('subtitle').textContent=(isManager()?'Панель руководителя':'Личный кабинет сотрудника')+' · '+r.member.full_name;
+   $('teamNav').classList.toggle('hidden',!isManager());
+   $('filterWrap').classList.toggle('hidden',!isManager());
+   $('ownerField').classList.toggle('hidden',!isManager());
+   $('month').value=today().slice(0,7);
+   goto('home');
+ }catch(e){$('accessText').textContent=e.message;$('retry').classList.remove('hidden');}
+}
+async function refresh(){
+ const r=await api('list');state.member=r.member;state.clients=r.clients;state.employees=r.employees;
+ const options='<option value="all">Вся команда</option>'+state.employees.filter(e=>e.is_active!==false).map(e=>`<option value="${esc(e.id)}">${esc(e.full_name)}</option>`).join('');
+ const f=$('ownerFilter'),old=f.value;f.innerHTML=options;
+ if([...f.options].some(o=>o.value===old))f.value=old;
+ $('ownerSelect').innerHTML=state.employees.filter(e=>e.is_active!==false).map(e=>`<option value="${esc(e.id)}">${esc(e.full_name)}</option>`).join('');
+ render();
+}
+function calc(items){
+ const sums={'ВХОД':0,'ВХОД С ПОТРЕБА':0,'БРОКЕРКА':0,'ДОПЫ':0};
+ items.forEach(c=>{if(Object.prototype.hasOwnProperty.call(sums,c.category))sums[c.category]+=Number(c.commission);});
+ const a=sums['ВХОД'],b=sums['БРОКЕРКА'];
+ const entrance=a*(a>=1501000?.06:.05);
+ const broker=b*(b>=3001000?.15:b>=2101000?.14:b>=1301000?.12:b>=501000?.10:.07)+(b>=3001000?30000:b>=2101000?20000:0);
+ const pay={'ВХОД':entrance,'ВХОД С ПОТРЕБА':sums['ВХОД С ПОТРЕБА']*.10,'БРОКЕРКА':broker,'ДОПЫ':sums['ДОПЫ']*.04};
+ return {sums,pay,total:Object.values(pay).reduce((s,n)=>s+n,0),comm:Object.values(sums).reduce((s,n)=>s+n,0)};
+}
+function filtered(){
+ const m=$('month').value||today().slice(0,7),owner=getSelectedOwner();
+ return state.clients.filter(c=>c.deal_date?.slice(0,7)===m&&(owner==='all'||c.employee_id===owner));
+}
+function totals(items){
+ // Ставки прогрессивные на совокупные комиссии КАЖДОГО сотрудника за месяц.
+ const grouped=new Map();items.forEach(c=>{if(!grouped.has(c.employee_id))grouped.set(c.employee_id,[]);grouped.get(c.employee_id).push(c);});
+ let grandTotal=0,grandCommission=0;const totalPay={'ВХОД':0,'ВХОД С ПОТРЕБА':0,'БРОКЕРКА':0,'ДОПЫ':0},sums={...totalPay};
+ for(const rows of grouped.values()){const r=calc(rows);grandTotal+=r.total;grandCommission+=r.comm;
+   for(const key of Object.keys(sums)){sums[key]+=r.sums[key];totalPay[key]+=r.pay[key];}}
+ return {total:grandTotal,comm:grandCommission,pay:totalPay,sums};
+}
+function entry(c){
+ return `<div class="entry"><div><b>${esc(c.client_name)}</b><div class="muted">${esc(c.category)} · ${esc(c.deal_date)}</div>${isManager()?`<div class="muted tiny">${esc(employeeName(c.employee_id))}</div>`:''}</div><div class="right"><b>${fmt(Number(c.commission))}</b><div class="actions"><button class="small" data-edit="${esc(c.id)}">Изменить</button><button class="small danger" data-delete="${esc(c.id)}">Удалить</button></div></div></div>`;
 }
 function render(){
-const items=entries.filter(e=>e.date.slice(0,7)===month());
-const result=calculate(items);
-document.getElementById('total').textContent=fmt(result.total);
-document.getElementById('comm').textContent='Комиссии компании: '+fmt(result.comm);
-document.getElementById('tiles').innerHTML=Object.keys(labels).map(k=>`<div class="tile"><div class="muted">${labels[k]}</div><b>${fmt(result.pay[k])}</b><div class="muted">Комиссии: ${fmt(result.sums[k])}</div></div>`).join('');
-const sorted=[...items].sort((a,b)=>b.date.localeCompare(a.date));
-const rows=a=>a.length?a.map(e=>`<div class="entry"><div><b>${escapeHtml(e.name)}</b><div class="muted">${labels[e.cat]} · ${e.date}</div></div><div class="right"><b>${fmt(e.amount)}</b><div class="actions"><button type="button" class="smallbtn" data-edit="${e.id}">Изменить</button><button type="button" class="smallbtn danger" data-delete="${e.id}">Удалить</button></div></div></div>`).join(''):'<p class="muted">Пока нет клиентов за этот месяц</p>';
-document.getElementById('recent').innerHTML=rows(sorted.slice(0,4));
-document.getElementById('all').innerHTML=rows(sorted);
+ if(!state.member)return;
+ const rows=filtered();const t=totals(rows);
+ $('earnedLabel').textContent=isManager()&&getSelectedOwner()==='all'?'Начислено команде за месяц':'Заработано за месяц';
+ $('earned').textContent=fmt(t.total);$('commissions').textContent='Комиссии компании: '+fmt(t.comm);
+ $('tiles').innerHTML=Object.keys(t.pay).map(k=>`<div class="tile"><div class="muted">${esc(k)}</div><b>${fmt(t.pay[k])}</b><div class="muted">Комиссии: ${fmt(t.sums[k])}</div></div>`).join('');
+ const markup=rows.length?rows.map(entry).join(''):'<div class="empty">В этом месяце записей пока нет</div>';
+ $('clientsList').innerHTML=markup;$('recent').innerHTML=rows.length?rows.slice(0,4).map(entry).join(''):'<div class="empty">Пока нет записей</div>';
+ if(isManager())renderTeam();
 }
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function resetEdit(){editingId=null;document.getElementById('form').reset();document.getElementById('date').value=new Date().toLocaleDateString('en-CA');document.getElementById('formTitle').textContent='Новая комиссия';document.getElementById('saveBtn').textContent='Сохранить комиссию';document.getElementById('cancelEdit').classList.add('hide')}
-function startEdit(id){const e=entries.find(x=>x.id===id);if(!e)return;editingId=id;document.getElementById('name').value=e.name;document.getElementById('cat').value=e.cat;document.getElementById('amount').value=e.amount;document.getElementById('date').value=e.date;document.getElementById('formTitle').textContent='Изменить клиента';document.getElementById('saveBtn').textContent='Сохранить изменения';document.getElementById('cancelEdit').classList.remove('hide');document.querySelector('[data-page=add]').click();window.scrollTo(0,0)}
-document.getElementById('cancelEdit').onclick=()=>{resetEdit();document.querySelector('[data-page=clients]').click()};
-document.addEventListener('click',event=>{const edit=event.target.closest('[data-edit]');const del=event.target.closest('[data-delete]');if(edit){startEdit(edit.dataset.edit)}else if(del){const item=entries.find(x=>x.id===del.dataset.delete);if(item&&confirm('Удалить клиента «'+item.name+'» и его комиссию '+fmt(item.amount)+'?')){entries=entries.filter(x=>x.id!==item.id);if(editingId===item.id)resetEdit();persist();render()}}});
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.page==='add'&&!editingId)resetEdit();document.querySelectorAll('main section').forEach(s=>s.classList.add('hide'));document.getElementById(b.dataset.page).classList.remove('hide');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
-document.getElementById('date').value=new Date().toLocaleDateString('en-CA');
-document.getElementById('form').onsubmit=e=>{e.preventDefault();const data={name:document.getElementById('name').value.trim(),cat:document.getElementById('cat').value,amount:Number(document.getElementById('amount').value),date:document.getElementById('date').value};if(!data.name||!Number.isFinite(data.amount)||data.amount<=0||!data.date)return;if(editingId){const i=entries.findIndex(x=>x.id===editingId);if(i!==-1)entries[i]={...entries[i],...data}}else{entries.push({...data,id:makeId()})}persist();resetEdit();document.querySelector('[data-page=home]').click();render()};
-render();
-</script></html>
+function renderTeam(){
+ const month=$('month').value||today().slice(0,7);
+ $('teamList').innerHTML=state.employees.map(e=>{
+   const r=calc(state.clients.filter(c=>c.employee_id===e.id&&c.deal_date.startsWith(month)));
+   return `<div class="entry"><div><b>${esc(e.full_name)}</b><div class="muted">${e.role==='manager'?'Руководитель':'Сотрудник'}${e.is_active===false?' · отключён':''}</div><div class="muted tiny">ID ${esc(e.telegram_id||'—')}</div></div><div class="right"><b>${fmt(r.total)}</b>${e.role==='employee'&&e.is_active!==false?`<button class="small danger" data-disable="${esc(e.id)}">Отключить</button>`:''}</div></div>`;
+ }).join('');
+}
+function goto(page){
+ if(page==='team'&&!isManager())page='home';
+ state.page=page;
+ for(const el of document.querySelectorAll('#workspace>section'))el.classList.toggle('hidden',el.id!==page);
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+ if(page==='edit'&&!state.editing)resetForm();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function resetForm(){
+ state.editing=null;$('clientForm').reset();$('dealDate').value=today();
+ $('formTitle').textContent='Новая комиссия';$('save').textContent='Сохранить комиссию';$('cancel').classList.add('hidden');
+ $('ownerSelect').value=isManager()&&getSelectedOwner()!=='all'?getSelectedOwner():state.member?.id;
+}
+function beginEdit(id){
+ const c=state.clients.find(x=>x.id===id);if(!c)return;
+ state.editing=c.id;$('clientName').value=c.client_name;$('category').value=c.category;
+ $('commission').value=c.commission;$('dealDate').value=c.deal_date;
+ if(isManager())$('ownerSelect').value=c.employee_id;
+ $('formTitle').textContent='Редактировать клиента';$('save').textContent='Сохранить изменения';
+ $('cancel').classList.remove('hidden');goto('edit');
+}
+async function withBusy(button,callback){
+ button.disabled=true;try{await callback();}catch(e){message(e.message,'error');window.scrollTo({top:0,behavior:'instant'});}finally{button.disabled=false;}
+}
+document.addEventListener('click',async e=>{
+ const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]'),disable=e.target.closest('[data-disable]');
+ if(edit){beginEdit(edit.dataset.edit);return;}
+ if(del){const c=state.clients.find(x=>x.id===del.dataset.delete);if(!c||!confirm(`Удалить клиента «${c.client_name}» и комиссию ${fmt(c.commission)}?`))return;
+   await withBusy(del,async()=>{await api('delete_client',{client_id:c.id});await refresh();message('Клиент удалён');});return;}
+ if(disable){const staff=state.employees.find(x=>x.id===disable.dataset.disable);if(!staff||!confirm(`Отключить ${staff.full_name}? Его данные сохранятся.`))return;
+   await withBusy(disable,async()=>{await api('disable_employee',{employee_id:staff.id});await refresh();message('Доступ сотрудника отключён');});}
+});
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>{clearMessage();goto(b.dataset.page);}));
+$('month').addEventListener('change',render);$('ownerFilter').addEventListener('change',render);
+$('cancel').onclick=()=>{resetForm();goto('clients');};
+$('clientForm').onsubmit=async e=>{e.preventDefault();
+ const data={client_id:state.editing,client_name:$('clientName').value.trim(),category:$('category').value,
+ commission:Number($('commission').value),deal_date:$('dealDate').value};
+ if(isManager())data.employee_id=$('ownerSelect').value;
+ await withBusy($('save'),async()=>{await api('save_client',data);await refresh();resetForm();goto('clients');message('Запись сохранена');});
+};
+$('retry').onclick=login;
+$('redeem').onclick=async()=>withBusy($('redeem'),async()=>{await api('redeem_invite',{code:$('inviteCode').value.trim()});await login();});
+$('employeeForm').onsubmit=async e=>{e.preventDefault();await withBusy(e.submitter||$('employeeForm').querySelector('button'),async()=>{
+ await api('add_employee',{telegram_id:$('newTgId').value,full_name:$('newName').value.trim()});
+ $('employeeForm').reset();await refresh();message('Сотрудник добавлен');});};
+$('newInvite').onclick=async()=>withBusy($('newInvite'),async()=>{
+ const r=await api('create_invite');$('newCode').textContent=r.code;$('inviteOutput').classList.remove('hidden');
+ message('Приглашение действительно 7 дней и активируется один раз.');
+});
+$('copyInvite').onclick=async()=>{try{await navigator.clipboard.writeText($('newCode').textContent);message('Код скопирован');}
+ catch{message('Выделите код и скопируйте его вручную','error');}};
+$('loadHistory').onclick=async()=>withBusy($('loadHistory'),async()=>{
+ const r=await api('history');$('historyList').innerHTML=r.history.length?r.history.map(x=>{
+ const oldName=x.old_data?.client_name||'',newName=x.new_data?.client_name||'';
+ const clientName=newName||oldName||'Клиент';const action={create:'Добавлено',update:'Изменено',delete:'Удалено'}[x.action]||x.action;
+ return `<div class="entry"><div><b>${esc(action)}: ${esc(clientName)}</b><div class="muted">${esc(new Date(x.changed_at).toLocaleString('ru-RU'))} · ${esc(employeeName(x.changed_by))}</div><div class="muted tiny">${x.action==='update'?`${fmt(Number(x.old_data?.commission))} → ${fmt(Number(x.new_data?.commission))}`:''}</div></div></div>`;
+ }).join(''):'<p class="empty">История пока пустая</p>';
+});
+if(tgApp){tgApp.ready();tgApp.expand();}
+$('month').value=today().slice(0,7);
+login();
+</script>
+</body>
+</html>
