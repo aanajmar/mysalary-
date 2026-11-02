@@ -1,0 +1,48 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MySalary</title><style>
+:root{font-family:Inter,system-ui,sans-serif;color:#f2f5f4;background:#101615}*{box-sizing:border-box}body{margin:0}main{max-width:480px;margin:auto;padding:24px 18px 100px}h1{font-size:25px;margin:4px 0 24px}.muted{color:#91a39e;font-size:13px}.hero{background:linear-gradient(140deg,#1c3c32,#173027);border:1px solid #315746;padding:25px;border-radius:25px}.hero strong{display:block;font-size:35px;margin:12px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.tile,.entry{background:#1d2724;border:1px solid #2c3934;border-radius:19px;padding:17px}.tile b{display:block;font-size:20px;margin-top:9px}.entry{margin:9px 0;display:flex;justify-content:space-between;gap:8px}.entry b{font-size:15px}button{border:0;background:#6ce0ad;color:#10251c;border-radius:14px;padding:14px 17px;font-weight:750;cursor:pointer}nav{position:fixed;bottom:0;left:0;right:0;background:#17211e;border-top:1px solid #35413b;display:flex;justify-content:center;gap:12px;padding:12px}nav button{background:#2b3b34;color:white}nav button.active{background:#6ce0ad;color:#10251c}.hide{display:none}input,select{width:100%;padding:14px;background:#24312c;color:white;border:1px solid #3b5146;border-radius:12px;margin:7px 0 17px;font-size:16px}label{font-size:13px;color:#b2c4ba}.actions{display:flex;gap:6px;align-items:center}.smallbtn{padding:9px 11px;font-size:12px;background:#344a40;color:#e8f5ed}.danger{background:#553333;color:#ffd7d7}.entry>div:first-child{min-width:0;overflow-wrap:anywhere}.entry{align-items:center}.entry .right{text-align:right;flex-shrink:0}.entry .right b{display:block;margin-bottom:8px}.note{font-size:12px;color:#91a39e;line-height:1.5}</style>
+<main><header><div class="muted">Личный кабинет · Демо</div><h1>MySalary <span style="color:#6ce0ad">●</span></h1></header>
+<section id="home"><div class="hero"><div class="muted">Заработано за месяц</div><strong id="total">0 ₽</strong><div id="comm" class="muted"></div></div><h3>По категориям</h3><div class="grid" id="tiles"></div><h3>Последние клиенты</h3><div id="recent"></div></section>
+<section id="clients" class="hide"><h2>Клиенты</h2><div id="all"></div></section>
+<section id="add" class="hide"><h2 id="formTitle">Новая комиссия</h2><form id="form"><label>Имя клиента</label><input id="name" required maxlength="100" placeholder="Например, Иван"><label>Категория</label><select id="cat"><option value="entrance">ВХОД</option><option value="consumer">ВХОД с потреба</option><option value="broker">БРОКЕРКА</option><option value="extras">ДОПЫ</option></select><label>Комиссия компании, ₽</label><input id="amount" type="number" min="1" max="1000000000" step="1" required placeholder="150000"><label>Дата</label><input id="date" type="date" required><button id="saveBtn" type="submit" style="width:100%">Сохранить комиссию</button><button id="cancelEdit" type="button" class="hide" style="width:100%;margin-top:9px;background:#344a40;color:white">Отменить изменение</button></form><p class="note">Демо хранит записи только в этом браузере. Для команды потребуется сервер и авторизация Telegram.</p></section></main>
+<nav><button data-page="home" class="active">Главная</button><button data-page="clients">Клиенты</button><button data-page="add">＋ Добавить</button></nav>
+<script>
+const fmt=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n)+' ₽';
+const labels={entrance:'ВХОД',consumer:'ВХОД с потреба',broker:'БРОКЕРКА',extras:'ДОПЫ'};
+let entries=JSON.parse(localStorage.getItem('mysalary_demo_v1')||'[]');
+let editingId=null;
+const makeId=()=>('id_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));
+entries=entries.map(e=>({...e,id:e.id||makeId()}));
+function persist(){localStorage.setItem('mysalary_demo_v1',JSON.stringify(entries))}
+persist();
+const month=()=>new Date().toISOString().slice(0,7);
+const rate=(sum,levels)=>levels.reduce((v,[threshold,r])=>sum>=threshold?r:v,levels[0][1]);
+function calculate(items){
+const sums={entrance:0,consumer:0,broker:0,extras:0};
+items.forEach(e=>sums[e.cat]+=e.amount);
+const entranceRate=rate(sums.entrance,[[0,.05],[1501000,.06]]);
+const brokerRate=rate(sums.broker,[[0,.07],[501000,.10],[1301000,.12],[2101000,.14],[3001000,.15]]);
+const bonus=sums.broker>=3001000?30000:sums.broker>=2101000?20000:0;
+const pay={entrance:sums.entrance*entranceRate,consumer:sums.consumer*.1,broker:sums.broker*brokerRate+bonus,extras:sums.extras*.04};
+return {sums,pay,total:Object.values(pay).reduce((a,b)=>a+b,0),comm:Object.values(sums).reduce((a,b)=>a+b,0)};
+}
+function render(){
+const items=entries.filter(e=>e.date.slice(0,7)===month());
+const result=calculate(items);
+document.getElementById('total').textContent=fmt(result.total);
+document.getElementById('comm').textContent='Комиссии компании: '+fmt(result.comm);
+document.getElementById('tiles').innerHTML=Object.keys(labels).map(k=>`<div class="tile"><div class="muted">${labels[k]}</div><b>${fmt(result.pay[k])}</b><div class="muted">Комиссии: ${fmt(result.sums[k])}</div></div>`).join('');
+const sorted=[...items].sort((a,b)=>b.date.localeCompare(a.date));
+const rows=a=>a.length?a.map(e=>`<div class="entry"><div><b>${escapeHtml(e.name)}</b><div class="muted">${labels[e.cat]} · ${e.date}</div></div><div class="right"><b>${fmt(e.amount)}</b><div class="actions"><button type="button" class="smallbtn" data-edit="${e.id}">Изменить</button><button type="button" class="smallbtn danger" data-delete="${e.id}">Удалить</button></div></div></div>`).join(''):'<p class="muted">Пока нет клиентов за этот месяц</p>';
+document.getElementById('recent').innerHTML=rows(sorted.slice(0,4));
+document.getElementById('all').innerHTML=rows(sorted);
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function resetEdit(){editingId=null;document.getElementById('form').reset();document.getElementById('date').value=new Date().toLocaleDateString('en-CA');document.getElementById('formTitle').textContent='Новая комиссия';document.getElementById('saveBtn').textContent='Сохранить комиссию';document.getElementById('cancelEdit').classList.add('hide')}
+function startEdit(id){const e=entries.find(x=>x.id===id);if(!e)return;editingId=id;document.getElementById('name').value=e.name;document.getElementById('cat').value=e.cat;document.getElementById('amount').value=e.amount;document.getElementById('date').value=e.date;document.getElementById('formTitle').textContent='Изменить клиента';document.getElementById('saveBtn').textContent='Сохранить изменения';document.getElementById('cancelEdit').classList.remove('hide');document.querySelector('[data-page=add]').click();window.scrollTo(0,0)}
+document.getElementById('cancelEdit').onclick=()=>{resetEdit();document.querySelector('[data-page=clients]').click()};
+document.addEventListener('click',event=>{const edit=event.target.closest('[data-edit]');const del=event.target.closest('[data-delete]');if(edit){startEdit(edit.dataset.edit)}else if(del){const item=entries.find(x=>x.id===del.dataset.delete);if(item&&confirm('Удалить клиента «'+item.name+'» и его комиссию '+fmt(item.amount)+'?')){entries=entries.filter(x=>x.id!==item.id);if(editingId===item.id)resetEdit();persist();render()}}});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{if(b.dataset.page==='add'&&!editingId)resetEdit();document.querySelectorAll('main section').forEach(s=>s.classList.add('hide'));document.getElementById(b.dataset.page).classList.remove('hide');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
+document.getElementById('date').value=new Date().toLocaleDateString('en-CA');
+document.getElementById('form').onsubmit=e=>{e.preventDefault();const data={name:document.getElementById('name').value.trim(),cat:document.getElementById('cat').value,amount:Number(document.getElementById('amount').value),date:document.getElementById('date').value};if(!data.name||!Number.isFinite(data.amount)||data.amount<=0||!data.date)return;if(editingId){const i=entries.findIndex(x=>x.id===editingId);if(i!==-1)entries[i]={...entries[i],...data}}else{entries.push({...data,id:makeId()})}persist();resetEdit();document.querySelector('[data-page=home]').click();render()};
+render();
+</script></html>
