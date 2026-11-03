@@ -42,10 +42,30 @@ function clearMessage(){const e=$('message');e.textContent='';e.className='hidde
 async function api(action, extra={}){
  if(EDGE_FUNCTION_URL.includes('PASTE-YOUR-PROJECT-REF')) throw Error('Нужно настроить адрес функции Supabase в index.html.');
  if(!tgApp?.initData) throw Error('Откройте приложение через кнопку в Telegram-боте.');
- const response=await fetch(EDGE_FUNCTION_URL,{
-   method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
-   body:JSON.stringify({action,initData:tgApp.initData,...extra})
- });
+ const requestBody=JSON.stringify({action,initData:tgApp.initData,...extra});
+ const sendRequest=async()=>{
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),15000);
+   try{
+     return await fetch(EDGE_FUNCTION_URL,{
+       method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+       body:requestBody,signal:controller.signal
+     });
+   }finally{clearTimeout(timeout);}
+ };
+ let response;
+ try{
+   response=await sendRequest();
+ }catch(e){
+   // Повторяем только чтение: запросы записи нельзя повторять автоматически.
+   if(action==='whoami'||action==='list'){
+     await new Promise(resolve=>setTimeout(resolve,800));
+     try{response=await sendRequest();}
+     catch{throw Error('Не удалось связаться с сервером. Проверьте интернет: переключитесь между Wi-Fi и мобильной сетью, затем повторите вход.');}
+   }else{
+     throw Error('Нет связи с сервером. Проверьте интернет и повторите действие.');
+   }
+ }
  let payload;try{payload=await response.json()}catch{throw Error('Сервер вернул неожиданный ответ');}
  if(!response.ok || !payload.ok) throw Error(payload.error || 'Ошибка запроса');
  return payload;
